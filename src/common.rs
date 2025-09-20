@@ -65,15 +65,15 @@ impl TargetTrait {
 /// Note that even without this check the compilation will fail if a non-static reference is used, however by
 /// performing this check we can issue a more explicit failure message to the developer.
 pub(super) fn check_field(field: &Field) {
-    if let Type::Reference(ty) = &field.ty {
-        if let Some(Lifetime { ident, .. }) = &ty.lifetime {
-            #[allow(clippy::manual_assert)]
-            if *ident != "static" {
-                panic!(
-                    "non-static references cannot be made static: {:?}",
-                    quote!(#field).to_string()
-                )
-            }
+    if let Type::Reference(ty) = &field.ty
+        && let Some(Lifetime { ident, .. }) = &ty.lifetime
+    {
+        #[allow(clippy::manual_assert)]
+        if *ident != "static" {
+            panic!(
+                "non-static references cannot be made static: {:?}",
+                quote!(#field).to_string()
+            )
         }
     }
 }
