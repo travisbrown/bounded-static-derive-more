@@ -32,6 +32,9 @@ pub(super) fn has_non_static_lifetime(ty: &Type, generic_idents: &[&Ident]) -> b
                                 syn::GenericArgument::AssocType(assoc_type) => {
                                     has_non_static_lifetime(&assoc_type.ty, generic_idents)
                                 }
+                                syn::GenericArgument::Lifetime(syn::Lifetime { ident, .. }) => {
+                                    *ident != "static"
+                                }
                                 _ => true,
                             })
                         }

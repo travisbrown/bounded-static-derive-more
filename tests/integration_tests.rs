@@ -452,6 +452,30 @@ fn test_struct_clone_fields() {
     ensure_static(owned);
 }
 
+#[test]
+fn test_struct_static_fields() {
+    #[derive(ToStatic)]
+    struct Foo<'a> {
+        name: Cow<'a, str>,
+        bar: Bar<'static>,
+    }
+
+    #[derive(Clone)]
+    struct Bar<'a> {
+        name: Cow<'a, str>,
+    }
+
+    let value = String::from("value");
+    let data = Foo {
+        name: Cow::from(&value),
+        bar: Bar {
+            name: value.clone().into(),
+        },
+    };
+    let owned = data.to_static();
+    ensure_static(owned);
+}
+
 fn ensure_static<S: 'static>(s: S) {
     drop(s);
 }
