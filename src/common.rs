@@ -5,6 +5,60 @@ use syn::{
     WhereClause, WherePredicate, parse_quote,
 };
 
+pub(super) fn has_non_static_lifetime(ty: &Type, generic_idents: &[&Ident]) -> bool {
+    match ty {
+        Type::Array(array) => has_non_static_lifetime(&array.elem, generic_idents),
+        Type::Paren(paren) => has_non_static_lifetime(&paren.elem, generic_idents),
+        Type::Path(syn::TypePath { qself: None, path }) => {
+            if path.segments.len() == 1
+                && path
+                    .segments
+                    .first()
+                    .is_some_and(|segment| segment.arguments.is_empty())
+            {
+                path.segments
+                    .first()
+                    .is_none_or(|segment| generic_idents.contains(&&segment.ident))
+            } else {
+                path.segments
+                    .iter()
+                    .any(|segment| match &segment.arguments {
+                        syn::PathArguments::None => false,
+                        syn::PathArguments::AngleBracketed(arguments) => {
+                            arguments.args.iter().any(|argument| match argument {
+                                syn::GenericArgument::Type(ty) => {
+                                    has_non_static_lifetime(ty, generic_idents)
+                                }
+                                syn::GenericArgument::AssocType(assoc_type) => {
+                                    has_non_static_lifetime(&assoc_type.ty, generic_idents)
+                                }
+                                _ => true,
+                            })
+                        }
+                        syn::PathArguments::Parenthesized(_) => true,
+                    })
+            }
+        }
+
+        Type::Tuple(tuple) => tuple
+            .elems
+            .iter()
+            .any(|elem| has_non_static_lifetime(elem, generic_idents)),
+        _ => true,
+    }
+}
+
+pub(super) fn generic_idents(generics: &Generics) -> Vec<&Ident> {
+    generics
+        .params
+        .iter()
+        .filter_map(|param| match param {
+            GenericParam::Type(type_param) => Some(&type_param.ident),
+            _ => None,
+        })
+        .collect()
+}
+
 /// The method and trait bound for both traits we will generate.
 #[derive(Copy, Clone)]
 pub(super) enum TargetTrait {
@@ -24,6 +78,13 @@ impl TargetTrait {
         match self {
             Self::ToBoundedStatic => format_ident!("ToBoundedStatic"),
             Self::IntoBoundedStatic => format_ident!("IntoBoundedStatic"),
+        }
+    }
+
+    pub const fn needs_clone(self) -> bool {
+        match self {
+            Self::ToBoundedStatic => true,
+            Self::IntoBoundedStatic => false,
         }
     }
 }

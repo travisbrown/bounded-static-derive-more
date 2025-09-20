@@ -420,6 +420,38 @@ fn test_generic_fully_qualified_enum() {
     ensure_static(owned);
 }
 
+#[test]
+fn test_struct_copy_fields() {
+    #[derive(ToStatic)]
+    struct Foo<'a> {
+        name: Cow<'a, str>,
+        value: chrono::DateTime<chrono::Utc>,
+    }
+    let value = String::from("value");
+    let data = Foo {
+        name: Cow::from(&value),
+        value: chrono::Utc::now(),
+    };
+    let owned = data.to_static();
+    ensure_static(owned);
+}
+
+#[test]
+fn test_struct_clone_fields() {
+    #[derive(ToStatic)]
+    struct Foo<'a> {
+        name: Cow<'a, str>,
+        value: serde_json::Value,
+    }
+    let value = String::from("value");
+    let data = Foo {
+        name: Cow::from(&value),
+        value: serde_json::Value::Null,
+    };
+    let owned = data.to_static();
+    ensure_static(owned);
+}
+
 fn ensure_static<S: 'static>(s: S) {
     drop(s);
 }
