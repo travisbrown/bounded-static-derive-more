@@ -29,6 +29,17 @@ pub fn to_static(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
 }
 
 fn generate_traits(input: &DeriveInput) -> TokenStream {
+    if input.generics.lifetimes().next().is_none() && input.generics.type_params().next().is_none()
+    {
+        let def_type = match &input.data {
+            Data::Struct(_) => "struct",
+            Data::Enum(_) => "enum",
+            Data::Union(_) => unimplemented!("union is not yet supported"),
+        };
+
+        panic!("cannot derive instance for a {def_type} with no lifetime parameter");
+    }
+
     match &input.data {
         Data::Struct(DataStruct {
             fields: Fields::Named(fields_named),

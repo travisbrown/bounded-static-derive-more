@@ -52,29 +52,6 @@ fn test_struct_named_fields_2() {
 }
 
 #[test]
-fn test_no_generics_or_lifetimes() {
-    #[derive(ToStatic)]
-    struct Foo(u32);
-    let data = Foo(0);
-    ensure_static(data.to_static())
-}
-
-#[test]
-fn test_struct_named_fields_no_generics() {
-    #[derive(ToStatic)]
-    struct Foo {
-        foo: String,
-        bar: &'static str,
-    }
-    let data = Foo {
-        foo: String::from("value"),
-        bar: "test",
-    };
-    let owned = data.to_static();
-    ensure_static(owned);
-}
-
-#[test]
 fn test_struct_unnamed_fields() {
     #[derive(ToStatic)]
     struct Foo<'a>(String, Cow<'a, str>, u16, Bar<'a>);
@@ -91,23 +68,6 @@ fn test_struct_unnamed_fields() {
             bar: Cow::from(&value),
         },
     );
-    ensure_static(data.to_static());
-}
-
-#[test]
-fn test_struct_unnamed_fields_no_generics() {
-    #[derive(ToStatic)]
-    struct Foo(String, &'static str);
-    let data = Foo(String::from("value"), "test");
-    let owned = data.to_static();
-    ensure_static(owned);
-}
-
-#[test]
-fn test_unit_struct() {
-    #[derive(ToStatic)]
-    struct Foo;
-    let data = Foo;
     ensure_static(data.to_static());
 }
 
@@ -168,14 +128,6 @@ fn test_struct_unnamed_fields_into() {
             bar: Cow::from(&value),
         },
     );
-    ensure_static(data.into_static());
-}
-
-#[test]
-fn test_unit_struct_into() {
-    #[derive(ToStatic)]
-    struct Foo;
-    let data = Foo;
     ensure_static(data.into_static());
 }
 

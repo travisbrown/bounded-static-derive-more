@@ -106,16 +106,6 @@ impl TargetTrait {
 /// }
 /// ```
 ///
-/// This `struct` will pass validation as the reference is `'static`:
-///
-/// ```rust
-/// # use bounded_static_derive_more::ToStatic;
-/// #[derive(ToStatic)]
-/// struct Foo {
-///   bar: &'static str
-/// }
-/// ```
-///
 /// This `struct` is will also pass validation as it can be converted to `'static` _for all_ lifetimes `'a`:
 ///
 /// ```rust
