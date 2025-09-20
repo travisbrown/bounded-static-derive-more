@@ -1,0 +1,20 @@
+[package]
+name = "bounded-static-derive-more"
+description = "Macro to derive ToBoundedStatic and IntoBoundedStatic traits"
+readme = "README.md"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+keywords = ["cow", "static", "bounded", "owned", "derive"]
+categories = ["no-std", "rust-patterns", "data-structures", "memory-management"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.69"
+quote = "1.0.33"
+syn = { version = "2.0.38", features = ["full"] }
+
+[dev-dependencies]
+bounded-static = "0.8"
