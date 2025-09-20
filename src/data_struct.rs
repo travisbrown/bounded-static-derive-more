@@ -26,8 +26,11 @@ pub(super) fn generate_struct_unnamed(
     fields_unnamed: &FieldsUnnamed,
 ) -> TokenStream {
     fields_unnamed.unnamed.iter().for_each(common::check_field);
-    let to = generate_struct_unnamed_to(name, generics, fields_unnamed);
-    let into = generate_struct_unnamed_into(name, generics, fields_unnamed);
+
+    let generic_idents = super::common::generic_idents(generics);
+
+    let to = generate_struct_unnamed_to(name, generics, &generic_idents, fields_unnamed);
+    let into = generate_struct_unnamed_into(name, generics, &generic_idents, fields_unnamed);
     quote!(#to #into)
 }
 
@@ -93,9 +96,10 @@ fn generate_struct_named_into(
 fn generate_struct_unnamed_to(
     name: &Ident,
     generics: &Generics,
+    generic_idents: &[&Ident],
     fields_unnamed: &FieldsUnnamed,
 ) -> TokenStream {
-    let fields = make_unnamed_fields(fields_unnamed, TargetTrait::ToBoundedStatic);
+    let fields = make_unnamed_fields(fields_unnamed, generic_idents, TargetTrait::ToBoundedStatic);
     let gens = common::make_bounded_generics(generics, TargetTrait::ToBoundedStatic);
     let (impl_gens, ty_gens, where_clause) = gens.split_for_impl();
     let static_gens = common::make_target_generics(generics, TargetTrait::ToBoundedStatic);
@@ -115,9 +119,14 @@ fn generate_struct_unnamed_to(
 fn generate_struct_unnamed_into(
     name: &Ident,
     generics: &Generics,
+    generic_idents: &[&Ident],
     fields_unnamed: &FieldsUnnamed,
 ) -> TokenStream {
-    let fields = make_unnamed_fields(fields_unnamed, TargetTrait::IntoBoundedStatic);
+    let fields = make_unnamed_fields(
+        fields_unnamed,
+        generic_idents,
+        TargetTrait::IntoBoundedStatic,
+    );
     let gens = common::make_bounded_generics(generics, TargetTrait::IntoBoundedStatic);
     let (impl_gens, ty_gens, where_clause) = gens.split_for_impl();
     let static_gens = common::make_target_generics(generics, TargetTrait::IntoBoundedStatic);
@@ -191,19 +200,36 @@ fn make_named_field_init_method(
     }
 }
 
-fn make_unnamed_fields(fields_unnamed: &FieldsUnnamed, target: TargetTrait) -> Vec<TokenStream> {
+fn make_unnamed_fields(
+    fields_unnamed: &FieldsUnnamed,
+    generic_idents: &[&Ident],
+    target: TargetTrait,
+) -> Vec<TokenStream> {
     let fields_to_static: Vec<_> = fields_unnamed
         .unnamed
         .iter()
         .enumerate()
-        .map(|(i, _)| make_unnamed_field(i, target))
+        .map(|(i, field)| make_unnamed_field(i, field, generic_idents, target))
         .collect();
     fields_to_static
 }
 
 /// i.e. `self.0.to_static()`
-fn make_unnamed_field(i: usize, target: TargetTrait) -> TokenStream {
+fn make_unnamed_field(
+    i: usize,
+    field: &Field,
+    generic_idents: &[&Ident],
+    target: TargetTrait,
+) -> TokenStream {
     let i = syn::Index::from(i);
-    let method = target.method();
-    quote!(self.#i.#method())
+
+    if super::common::has_non_static_lifetime(&field.ty, generic_idents) {
+        let method = target.method();
+
+        quote!(self.#i.#method())
+    } else if target.needs_clone() {
+        quote!(self.#i.clone())
+    } else {
+        quote!(self.#i)
+    }
 }

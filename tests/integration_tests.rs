@@ -428,6 +428,28 @@ fn test_struct_static_fields() {
     ensure_static(owned);
 }
 
+#[test]
+fn test_struct_unnamed_copy_fields() {
+    #[derive(ToStatic)]
+    struct Foo<'a>(Cow<'a, str>, chrono::DateTime<chrono::Utc>);
+
+    let value = String::from("value");
+    let data = Foo(Cow::from(&value), chrono::Utc::now());
+    let owned = data.to_static();
+    ensure_static(owned);
+}
+
+#[test]
+fn test_struct_nnamed_clone_fields() {
+    #[derive(ToStatic)]
+    struct Foo<'a>(Cow<'a, str>, serde_json::Value);
+
+    let value = String::from("value");
+    let data = Foo(Cow::from(&value), serde_json::Value::Null);
+    let owned = data.to_static();
+    ensure_static(owned);
+}
+
 fn ensure_static<S: 'static>(s: S) {
     drop(s);
 }
