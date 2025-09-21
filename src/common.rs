@@ -142,7 +142,7 @@ pub(super) fn make_target_generics(generics: &Generics, target: TargetTrait) -> 
         .map(|param| match param {
             GenericParam::Type(TypeParam { ident, .. }) => {
                 let target_bound = target.bound();
-                quote!(<#ident as #target_bound>::Static)
+                quote!(<#ident as ::bounded_static::#target_bound>::Static)
             }
             GenericParam::Lifetime(_) => quote!('static),
             GenericParam::Const(ConstParam { ident, .. }) => quote!(#ident),
